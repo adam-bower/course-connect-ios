@@ -1,4 +1,4 @@
-import { usePostHog } from "posthog-react-native/lib/posthog-react-native/src/hooks/usePostHog";
+import { usePostHog } from "posthog-react-native";
 import { CustomPostHogEvents, CustomPostHogExceptions, DebugLevelCustomPostHogEvents } from "./constants";
 import { CustomPostHogEventParams } from "./models";
 import { useAppConfigContext } from "../contexts";

@@ -58,6 +58,12 @@ const SIDEBAR_ROUTES = [
     href: { pathname: `/${ROUTES.CATEGORIES}` },
     routeName: `(home)/${ROUTES.CATEGORIES}`,
   },
+  {
+    nameKey: "forum",
+    icon: "MessageSquare",
+    href: { pathname: `/${ROUTES.FORUM}` },
+    routeName: `(home)/${ROUTES.FORUM}`,
+  },
 ];
 
 interface SidebarProps extends DrawerContentComponentProps {

@@ -2,7 +2,7 @@ import JSON5 from "json5";
 import { useEffect, useState } from "react";
 import { Asset } from "expo-asset";
 import { Platform } from "react-native";
-import { readAsStringAsync } from "expo-file-system";
+import { readAsStringAsync } from "expo-file-system/legacy";
 import { InstanceConfig } from "../instanceConfigs";
 
 export const useFeaturedInstancesData = () => {

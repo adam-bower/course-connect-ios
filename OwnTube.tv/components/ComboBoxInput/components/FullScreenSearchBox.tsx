@@ -1,6 +1,6 @@
 import { FC, useCallback, useRef, useState } from "react";
 import { Button } from "../../shared";
-import { FlatList, Platform, StyleSheet, TextInput, TVFocusGuideView, View } from "react-native";
+import { FlatList, Platform, StyleSheet, TextInput, View } from "react-native";
 import { styles } from "../styles";
 import { DropdownItem, LIST_ITEM_HEIGHT } from "./DropdownItem";
 import { borderRadius, spacing } from "../../../theme";
@@ -52,7 +52,7 @@ export const FullScreenSearchBox: FC<FullScreenSearchBoxProps> = ({
   );
 
   return (
-    <TVFocusGuideView trapFocusUp trapFocusLeft trapFocusRight trapFocusDown style={{ flex: 1, marginTop: 0 }}>
+    <View style={{ flex: 1, marginTop: 0 }}>
       <View style={componentStyles.inputHeaderContainer}>
         <TextInput
           editable={!Platform.isTV}
@@ -135,7 +135,7 @@ export const FullScreenSearchBox: FC<FullScreenSearchBoxProps> = ({
           style={{ ...componentStyles.list, flex: Platform.isTV ? 0 : 1 }}
         />
       </View>
-    </TVFocusGuideView>
+    </View>
   );
 };
 

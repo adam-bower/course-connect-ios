@@ -44,7 +44,9 @@ export const ChannelScreen = () => {
       {playlists?.map(({ uuid, displayName, id, videoChannel }) => (
         <PlaylistVideosView channel={videoChannel?.name} id={id} title={displayName} key={uuid} />
       ))}
-      {categories?.map((category) => <CategoryView channelHandle={channel} category={category} key={category.id} />)}
+      {categories?.map((category) => (
+        <CategoryView channelHandle={channel} category={category} key={category.id} />
+      ))}
       <InfoFooter />
     </Screen>
   );

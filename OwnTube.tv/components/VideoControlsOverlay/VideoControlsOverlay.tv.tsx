@@ -5,7 +5,6 @@ import {
   View,
   useTVEventHandler,
   useWindowDimensions,
-  TVFocusGuideView,
   Platform,
   BackHandler,
   ActivityIndicator,
@@ -215,7 +214,7 @@ const VideoControlsOverlay = ({
               colors={["#00000080", "#0000004D", "#00000000"]}
               style={styles.topControlsContainer}
             >
-              <TVFocusGuideView style={styles.topLeftControls}>
+              <View style={styles.topLeftControls}>
                 <PlayerButton
                   nextFocusRight={detailsRef}
                   ref={(node) => setBackRef(node)}
@@ -252,7 +251,7 @@ const VideoControlsOverlay = ({
                     />
                   </View>
                 </View>
-              </TVFocusGuideView>
+              </View>
               <View style={styles.topRightControls}>
                 <ShareButton
                   nextFocusLeft={detailsRef}
@@ -265,7 +264,7 @@ const VideoControlsOverlay = ({
             </LinearGradient>
           </View>
           <View style={styles.playbackControlsContainer}>
-            <TVFocusGuideView autoFocus trapFocusRight trapFocusLeft style={styles.centerControlsContainer}>
+            <View style={styles.centerControlsContainer}>
               {!isLiveVideo && (
                 <PlayerButton
                   scale={INTERFACE_SCALE}
@@ -294,7 +293,7 @@ const VideoControlsOverlay = ({
                   icon="Fast-forward-30"
                 />
               )}
-            </TVFocusGuideView>
+            </View>
             {isSettingsMenuVisible && (
               <View style={styles.playbackSettingsContainer}>
                 <PlaybackSettingsPopup
@@ -348,7 +347,7 @@ const VideoControlsOverlay = ({
                     </Typography>
                   )}
                 </View>
-                <TVFocusGuideView style={{ flexDirection: "row" }}>
+                <View style={{ flexDirection: "row" }}>
                   {isCCAvailable && (
                     <PlayerButton
                       color={isCCVisible ? undefined : colors.white25}
@@ -361,7 +360,7 @@ const VideoControlsOverlay = ({
                     icon="Settings"
                     onPress={() => setIsSettingsMenuVisible((cur) => !cur)}
                   />
-                </TVFocusGuideView>
+                </View>
               </View>
             </LinearGradient>
           </View>

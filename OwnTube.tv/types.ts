@@ -32,6 +32,9 @@ export enum ROUTES {
   SIGNIN = "signin",
   OTP = "otp",
   SEARCH = "search",
+  FORUM = "forum",
+  FORUM_CATEGORY = "forum-category",
+  FORUM_THREAD = "forum-thread",
 }
 
 export interface Category {
