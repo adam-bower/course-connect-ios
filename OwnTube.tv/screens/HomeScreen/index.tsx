@@ -1,221 +1,191 @@
-import { CategoryView, InfoFooter, VideoGrid } from "../../components";
-import { useIsFocused, useTheme } from "@react-navigation/native";
-import {
-  QUERY_KEYS,
-  useGetCategoriesQuery,
-  useGetChannelsQuery,
-  useGetPlaylistsQuery,
-  useGetVideoFullInfoCollectionQuery,
-  useGetVideosQuery,
-} from "../../api";
-import { useMemo, useState } from "react";
-import { useCustomFocusManager, usePageContentTopPadding, useViewHistory } from "../../hooks";
-import { spacing } from "../../theme";
+import { InfoFooter, Loader } from "../../components";
+import { useTheme } from "@react-navigation/native";
+import { useGetCategoriesQuery } from "../../api";
+import { useCustomFocusManager, usePageContentTopPadding } from "../../hooks";
+import { borderRadius, spacing, colors } from "../../theme";
 import { ROUTES } from "../../types";
-import { Platform, RefreshControl, SectionList, StyleSheet, View } from "react-native";
-import { useTranslation } from "react-i18next";
-import { LatestVideosView, SectionHeader } from "./components";
-import { useLocalSearchParams } from "expo-router";
+import { FlatList, Image, Platform, Pressable, SectionList, StyleSheet, View } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { RootStackParams } from "../../app/_layout";
-import { ChannelView } from "../../components";
-import { PlaylistVideosView } from "../Playlists/components";
-import { VideoChannel, VideoPlaylist } from "@peertube/peertube-types";
-import { useAppConfigContext } from "../../contexts";
-import { useQueryClient } from "@tanstack/react-query";
-import { useCustomDiagnosticsEvents } from "../../diagnostics/useCustomDiagnosticEvents";
-import { CustomPostHogEvents } from "../../diagnostics/constants";
+import { Typography } from "../../components/Typography";
+import { useMemo } from "react";
 
-const LIVE_STREAM_LIST_REFETCH_INTERVAL = 10_000;
+// Category images mapping
+// Place your images in assets/categories/ folder with these names:
+const categoryImages: Record<number, any> = {
+  1: require("../../assets/categories/popular-videos.png"),
+  2: require("../../assets/categories/uploading-file-formats.png"),
+  3: require("../../assets/categories/intro-machine-control.png"),
+  4: require("../../assets/categories/earthworks-infield-design.png"),
+  5: require("../../assets/categories/earthworks-core-features.png"),
+  6: require("../../assets/categories/earthworks-project-setup.png"),
+  7: require("../../assets/categories/earthworks-first-time-setup.png"),
+  8: require("../../assets/categories/earthworks-basics.png"),
+  9: require("../../assets/categories/siteworks-advanced-layout.png"),
+  10: require("../../assets/categories/siteworks-basic-layout.png"),
+  11: require("../../assets/categories/siteworks-project-setup.png"),
+  12: require("../../assets/categories/siteworks-basics.png"),
+  13: require("../../assets/categories/siteworks-first-time-setup.png"),
+};
 
 export const HomeScreen = () => {
   const { colors } = useTheme();
-  const { t } = useTranslation();
   const { backend } = useLocalSearchParams<RootStackParams[ROUTES.INDEX]>();
-  const { viewHistory } = useViewHistory({ backendToFilter: backend });
-  const { currentInstanceConfig } = useAppConfigContext();
   const { top } = usePageContentTopPadding();
-  const isFocused = useIsFocused();
+  const router = useRouter();
   useCustomFocusManager();
-  const queryClient = useQueryClient();
-  const { captureDiagnosticsEvent } = useCustomDiagnosticsEvents();
 
-  const { data: channels, refetch: refetchChannels } = useGetChannelsQuery({
-    enabled: !currentInstanceConfig?.customizations?.homeHideChannelsOverview,
-  });
-  const { data: categories, refetch: refetchCategories } = useGetCategoriesQuery({
-    enabled: !currentInstanceConfig?.customizations?.homeHideCategoriesOverview,
-  });
-  const { data: playlistsData, refetch: refetchPlaylists } = useGetPlaylistsQuery({
-    enabled: !currentInstanceConfig?.customizations?.homeHidePlaylistsOverview,
-    hiddenPlaylists: currentInstanceConfig?.customizations?.playlistsHidden,
-  });
-  const { data: currentLiveVideos } = useGetVideosQuery({
-    uniqueQueryKey: QUERY_KEYS.liveVideos,
-    params: { isLive: true, count: 4 },
-    refetchInterval: isFocused ? LIVE_STREAM_LIST_REFETCH_INTERVAL : 0,
-  });
+  const { data: categories, isLoading } = useGetCategoriesQuery({});
 
-  const liveVideoIds = useMemo(() => {
-    return Array.from(
-      new Set(
-        currentLiveVideos?.data
-          .map(({ uuid }) => uuid)
-          .concat(currentInstanceConfig?.customizations?.homeFeaturedLives || []),
-      ),
-    );
-  }, [currentLiveVideos, currentInstanceConfig]);
+  const handleCategoryPress = (categoryId: number) => {
+    router.push({
+      pathname: `/${ROUTES.CATEGORY}`,
+      params: { category: String(categoryId), backend },
+    });
+  };
 
-  const liveVideosData = useGetVideoFullInfoCollectionQuery(liveVideoIds, QUERY_KEYS.liveStreamsCollection);
+  // Group categories into sections
+  const categoryGroups = useMemo(() => {
+    if (!categories) return [];
 
-  const historyData = useMemo(() => {
-    return (
-      viewHistory
-        ?.slice(0, currentInstanceConfig?.customizations?.homeRecentlyWatchedVideoCount ?? 4)
-        .filter(({ isLive }) => !isLive) || []
-    );
-  }, [viewHistory, currentInstanceConfig]);
-
-  const showHorizontalScrollableLists = currentInstanceConfig?.customizations?.homeUseHorizontalListsForMobilePortrait;
-
-  const sections = useMemo(() => {
     return [
       {
-        title: t("liveStreams"),
-        renderItem: () => (
-          <VideoGrid
-            scrollable={showHorizontalScrollableLists}
-            isTVActionCardHidden={true}
-            isHeaderHidden
-            data={liveVideosData}
-          />
+        title: "General",
+        data: categories.filter(
+          (c) => c.id <= 3, // Popular, Uploading, Intro to Machine Control
         ),
-        data: ["dataItemPlaceholder"],
-        isVisible: Number(liveVideosData?.length) > 0,
       },
       {
-        title: t("latestVideos"),
-        renderItem: () => <LatestVideosView />,
-        data: ["dataItemPlaceholder"],
-        isVisible: true,
-      },
-      {
-        title: t("recentlyWatched"),
-        link: { text: t("viewHistory"), route: `/${ROUTES.HISTORY}` },
-        renderItem: () => (
-          <VideoGrid
-            scrollable={showHorizontalScrollableLists}
-            link={
-              Platform.isTV
-                ? { text: t("viewHistory"), href: { pathname: `/${ROUTES.HISTORY}`, params: { backend } } }
-                : undefined
-            }
-            isHeaderHidden
-            data={historyData}
-            variant="history"
-          />
+        title: "Earthworks",
+        data: categories.filter(
+          (c) => c.id >= 4 && c.id <= 8, // All Earthworks categories
         ),
-        data: ["dataItemPlaceholder"],
-        isVisible: historyData.length > 0,
       },
       {
-        title: t("playlistsPageTitle"),
-        link: { text: t("allPlaylists"), route: `/${ROUTES.PLAYLISTS}` },
-        renderItem: ({ item }: { item: VideoPlaylist }) => (
-          <PlaylistVideosView location="home" key={item.id} title={item.displayName} id={item.id} />
+        title: "Siteworks",
+        data: categories.filter(
+          (c) => c.id >= 9 && c.id <= 13, // All Siteworks categories
         ),
-        data: playlistsData?.data || [],
-        isVisible: !currentInstanceConfig?.customizations?.homeHidePlaylistsOverview && !!playlistsData?.data?.length,
       },
-      {
-        title: t("channels"),
-        link: { text: t("allChannels"), route: `/${ROUTES.CHANNELS}` },
-        renderItem: ({ item }: { item: VideoChannel }) => <ChannelView key={item.id} channel={item} />,
-        data: channels || [],
-        isVisible: !currentInstanceConfig?.customizations?.homeHideChannelsOverview && !!channels?.length,
-      },
-      {
-        title: t("categories"),
-        link: { text: t("allCategories"), route: `/${ROUTES.CATEGORIES}` },
-        renderItem: ({ item }: { item: { name: string; id: number } }) => (
-          <CategoryView category={item} key={item.id} />
-        ),
-        data: categories || [],
-        isVisible: !currentInstanceConfig?.customizations?.homeHideCategoriesOverview && !!categories?.length,
-      },
-    ].filter(({ isVisible }) => isVisible);
-  }, [
-    t,
-    historyData,
-    backend,
-    playlistsData,
-    channels,
-    categories,
-    currentInstanceConfig,
-    liveVideosData,
-    showHorizontalScrollableLists,
-  ]);
+    ];
+  }, [categories]);
 
-  const [refreshing, setRefreshing] = useState(false);
+  if (isLoading) {
+    return <Loader />;
+  }
 
-  const onRefresh = async () => {
-    setRefreshing(true);
+  const renderCategoryItem = (category: { name: string; id: number }) => (
+    <Pressable
+      key={category.id}
+      onPress={() => handleCategoryPress(category.id)}
+      style={({ pressed, focused }) => [
+        styles.categoryCard,
+        {
+          transform: [{ scale: pressed ? 0.98 : 1 }],
+          opacity: pressed ? 0.9 : 1,
+        },
+        Platform.isTV && focused && styles.categoryCardFocused,
+      ]}
+    >
+      <Image
+        source={categoryImages[category.id] || require("../../assets/thumbnailFallback.png")}
+        style={styles.categoryImage}
+        resizeMode="cover"
+      />
+    </Pressable>
+  );
 
-    await refetchCategories();
-    await refetchChannels();
-    await refetchPlaylists();
-    await queryClient.refetchQueries({ queryKey: [QUERY_KEYS.videos], type: "active" });
-    await queryClient.refetchQueries({ queryKey: [QUERY_KEYS.playlistVideos], type: "active" });
-    await queryClient.refetchQueries({ queryKey: [QUERY_KEYS.channelVideos], type: "active" });
+  const renderSectionHeader = ({ section }: { section: { title: string } }) => (
+    <Typography variant="h3" style={[styles.sectionTitle, { color: colors.text }]}>
+      {section.title}
+    </Typography>
+  );
 
-    setRefreshing(false);
-    captureDiagnosticsEvent(CustomPostHogEvents.PullToRefresh);
-  };
+  const renderSection = ({ item }: { item: Array<{ name: string; id: number }> }) => (
+    <FlatList
+      horizontal
+      data={item}
+      renderItem={({ item: category }) => renderCategoryItem(category)}
+      keyExtractor={(item) => String(item.id)}
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.carousel}
+      style={styles.horizontalList}
+    />
+  );
+
+  // Transform data for SectionList - each section has a single item (the array of categories)
+  const sections = categoryGroups.map((group) => ({
+    title: group.title,
+    data: [group.data], // Wrap in array since SectionList expects array of items
+  }));
 
   return (
     <View
       style={{
         ...styles.container,
         backgroundColor: colors.background,
-        paddingTop: top,
       }}
     >
-      <View style={{ ...styles.paddingContainer }}>
-        <SectionList
-          refreshControl={
-            <RefreshControl
-              colors={[colors.theme500]}
-              progressBackgroundColor={colors.theme900}
-              tintColor={colors.theme900}
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-            />
-          }
-          // @ts-expect-error the sections do not change in runtime so we can be sure the typings match
-          sections={sections}
-          disableVirtualization
-          stickySectionHeadersEnabled
-          showsVerticalScrollIndicator={false}
-          ListFooterComponent={<InfoFooter />}
-          style={{
-            ...styles.paddingContainer,
-            flex: Platform.isTV ? 0 : 1,
-          }}
-          renderSectionHeader={({ section: { title, link } }) => <SectionHeader title={title} link={link} />}
-        />
-      </View>
+      <SectionList
+        sections={sections}
+        renderSectionHeader={renderSectionHeader}
+        renderItem={renderSection}
+        keyExtractor={(item, index) => `section-${index}`}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: top + spacing.lg }]}
+        showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
+        ListFooterComponent={<InfoFooter />}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    flex: 1,
-    gap: spacing.xl,
-    padding: 0,
+  carousel: {
+    paddingHorizontal: spacing.lg,
   },
-  paddingContainer: {
-    flex: 1,
+  categoryCard: {
+    borderRadius: borderRadius.lg,
+    height: Platform.select({ web: 140, default: 120 }),
+    marginRight: spacing.md,
+    overflow: "hidden",
+    width: Platform.select({ web: 200, default: 160 }),
+    ...Platform.select({
+      web: {
+        cursor: "pointer",
+      },
+      default: {},
+    }),
+  },
+  categoryCardFocused: {
+    elevation: 8,
+    shadowColor: colors.black100,
+    shadowOffset: {
+      height: 4,
+      width: 0,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    transform: [{ scale: 1.05 }],
+  },
+  categoryImage: {
+    height: "100%",
     width: "100%",
+  },
+  container: {
+    flex: 1,
+  },
+  horizontalList: {
+    marginBottom: spacing.xl,
+  },
+  scrollContent: {
+    paddingBottom: spacing.xl * 2,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: spacing.md,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
 });

@@ -1,7 +1,6 @@
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { RootStackParams } from "../../app/_layout";
 import { ROUTES } from "../../types";
-import { Screen } from "../../layouts";
 import { InfoFooter, Loader, VideoGrid } from "../../components";
 import { QUERY_KEYS, useGetCategoriesQuery, useInfiniteVideosQuery } from "../../api";
 import { useMemo } from "react";
@@ -9,11 +8,18 @@ import { useCustomFocusManager, usePageContentTopPadding } from "../../hooks";
 import { useTranslation } from "react-i18next";
 import { useAppConfigContext } from "../../contexts";
 import { useQueryClient } from "@tanstack/react-query";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { IcoMoonIcon } from "../../components/IcoMoonIcon";
+import { Typography } from "../../components/Typography";
+import { useTheme } from "@react-navigation/native";
+import { spacing } from "../../theme";
 
 export const CategoryScreen = () => {
   const queryClient = useQueryClient();
+  const router = useRouter();
+  const { colors } = useTheme();
   const { currentInstanceConfig } = useAppConfigContext();
-  const { category } = useLocalSearchParams<RootStackParams[ROUTES.CATEGORY]>();
+  const { category, backend } = useLocalSearchParams<RootStackParams[ROUTES.CATEGORY]>();
   const { data: categories, isLoading: isLoadingCategories } = useGetCategoriesQuery({});
   const { t } = useTranslation();
   const { top } = usePageContentTopPadding();
@@ -27,6 +33,7 @@ export const CategoryScreen = () => {
     uniqueQueryKey: QUERY_KEYS.categoryVideosView,
     queryParams: { categoryOneOf: [Number(category)] },
     pageSize: currentInstanceConfig?.customizations?.showMoreSize,
+    backend: backend,
   });
 
   const videos = useMemo(() => {
@@ -42,17 +49,57 @@ export const CategoryScreen = () => {
   }
 
   return (
-    <Screen onRefresh={refetchPageData} style={{ padding: 0, paddingTop: top }}>
-      <VideoGrid
-        isLoading={isLoading}
-        data={videos}
-        title={categoryTitle}
-        isLoadingMore={isFetchingNextPage}
-        handleShowMore={hasNextPage ? fetchNextPage : undefined}
-        link={{ text: t("showMore") }}
-        isTVActionCardHidden={!hasNextPage}
-      />
-      <InfoFooter />
-    </Screen>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { paddingTop: top }]}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <IcoMoonIcon name="Chevron-Left" size={24} color={colors.text} />
+        </Pressable>
+        <Typography variant="h2" style={[styles.title, { color: colors.text }]}>
+          {categoryTitle}
+        </Typography>
+        <View style={styles.placeholder} />
+      </View>
+      <View style={styles.content}>
+        <VideoGrid
+          isLoading={isLoading}
+          data={videos}
+          backend={backend}
+          isLoadingMore={isFetchingNextPage}
+          handleShowMore={hasNextPage ? fetchNextPage : undefined}
+          link={{ text: t("showMore") }}
+          isTVActionCardHidden={!hasNextPage}
+        />
+        <InfoFooter />
+      </View>
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  backButton: {
+    padding: spacing.md,
+  },
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+  },
+  header: {
+    alignItems: "center",
+    borderBottomColor: "rgba(128, 128, 128, 0.2)",
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  placeholder: {
+    width: 40 + spacing.md * 2, // Same width as back button for centering
+  },
+  title: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+});

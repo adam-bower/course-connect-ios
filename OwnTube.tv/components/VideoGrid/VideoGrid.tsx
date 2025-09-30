@@ -41,6 +41,7 @@ export interface VideoGridProps {
   reduceHeaderContrast?: boolean;
   isTVActionCardHidden?: boolean;
   scrollable?: boolean;
+  backend?: string;
 }
 
 export const VideoGrid = ({
@@ -60,8 +61,10 @@ export const VideoGrid = ({
   reduceHeaderContrast = false,
   isTVActionCardHidden = false,
   scrollable = false,
+  backend: backendProp,
 }: VideoGridProps) => {
-  const { backend } = useLocalSearchParams<RootStackParams[ROUTES.INDEX]>();
+  const { backend: backendFromParams } = useLocalSearchParams<RootStackParams[ROUTES.INDEX]>();
+  const backend = backendProp || backendFromParams;
   const { colors } = useTheme();
   const router = useRouter();
   const { isMobile, isDesktop } = useBreakpoints();

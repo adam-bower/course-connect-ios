@@ -8,9 +8,10 @@ import { CustomPostHogEvents } from "../diagnostics/constants";
 interface ScreenProps extends PropsWithChildren {
   style?: ViewStyle;
   onRefresh?: () => Promise<void>;
+  scrollable?: boolean;
 }
 
-export const Screen: FC<ScreenProps> = ({ children, style, onRefresh }) => {
+export const Screen: FC<ScreenProps> = ({ children, style, onRefresh, scrollable = true }) => {
   const [refreshing, setRefreshing] = useState(false);
   const { right } = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -24,6 +25,12 @@ export const Screen: FC<ScreenProps> = ({ children, style, onRefresh }) => {
     setRefreshing(false);
     captureDiagnosticsEvent(CustomPostHogEvents.PullToRefresh);
   };
+
+  const content = <View style={[styles.container, { paddingRight: right }, style]}>{children}</View>;
+
+  if (!scrollable) {
+    return content;
+  }
 
   return (
     <ScrollView
@@ -39,7 +46,7 @@ export const Screen: FC<ScreenProps> = ({ children, style, onRefresh }) => {
         ) : undefined
       }
     >
-      <View style={[styles.container, { paddingRight: right }, style]}>{children}</View>
+      {content}
     </ScrollView>
   );
 };

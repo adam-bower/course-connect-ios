@@ -127,6 +127,7 @@ export const SearchResultsScreen = () => {
 
   return (
     <Screen
+      scrollable={false}
       style={{
         width: "100%",
         maxWidth: 900,

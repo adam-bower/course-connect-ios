@@ -50,10 +50,12 @@ export const useInfiniteVideosQuery = (
     pageSize: number;
     uniqueQueryKey: string;
     queryParams: VideosCommonQuery;
+    backend?: string;
   }>,
 ) => {
-  const { backend } = useLocalSearchParams<RootStackParams["index"]>();
-  const { pageSize = 24, uniqueQueryKey, queryParams, firstPageSize } = queryArg;
+  const { backend: backendFromParams } = useLocalSearchParams<RootStackParams["index"]>();
+  const { pageSize = 24, uniqueQueryKey, queryParams, firstPageSize, backend: backendFromArg } = queryArg;
+  const backend = backendFromArg || backendFromParams;
   const _0PageSize = firstPageSize ?? pageSize;
 
   return useInfiniteQuery({
