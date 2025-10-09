@@ -18,7 +18,7 @@ export const ColorSchemeContextProvider = ({ children }: PropsWithChildren) => {
 
       readFromAsyncStorage("colorScheme").then((scheme: ColorSchemeName) => {
         setSelectedColorScheme(
-          scheme || currentInstanceConfig?.customizations?.pageDefaultTheme || deviceScheme || "light",
+          scheme || currentInstanceConfig?.customizations?.pageDefaultTheme || deviceScheme || "dark",
         );
       });
 

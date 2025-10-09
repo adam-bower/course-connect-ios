@@ -1,6 +1,7 @@
 import { VideosCommonQuery } from "@peertube/peertube-types";
 
 // Common query parameters for fetching videos that are classified as "local", "non-live", and "Safe-For-Work"
+// privacyOneOf: 1=Public, 2=Unlisted, 3=Private, 4=Internal
 export const commonQueryParams: VideosCommonQuery = {
   start: 0,
   count: 15,
@@ -9,6 +10,7 @@ export const commonQueryParams: VideosCommonQuery = {
   isLocal: true,
   isLive: false,
   skipCount: false,
+  privacyOneOf: [1, 2, 3, 4], // Include all privacy levels (requires authentication for private/internal)
 };
 
 export enum QUERY_KEYS {

@@ -10,22 +10,22 @@ import { RootStackParams } from "../../app/_layout";
 import { Typography } from "../../components/Typography";
 import { useMemo } from "react";
 
-// Category images mapping
+// Category images mapping - maps category names to images
 // Place your images in assets/categories/ folder with these names:
-const categoryImages: Record<number, any> = {
-  1: require("../../assets/categories/popular-videos.png"),
-  2: require("../../assets/categories/uploading-file-formats.png"),
-  3: require("../../assets/categories/intro-machine-control.png"),
-  4: require("../../assets/categories/earthworks-infield-design.png"),
-  5: require("../../assets/categories/earthworks-core-features.png"),
-  6: require("../../assets/categories/earthworks-project-setup.png"),
-  7: require("../../assets/categories/earthworks-first-time-setup.png"),
-  8: require("../../assets/categories/earthworks-basics.png"),
-  9: require("../../assets/categories/siteworks-advanced-layout.png"),
-  10: require("../../assets/categories/siteworks-basic-layout.png"),
-  11: require("../../assets/categories/siteworks-project-setup.png"),
-  12: require("../../assets/categories/siteworks-basics.png"),
-  13: require("../../assets/categories/siteworks-first-time-setup.png"),
+const categoryImages: Record<string, any> = {
+  "Popular Videos": require("../../assets/categories/popular-videos.png"),
+  "Uploading & File Formats": require("../../assets/categories/uploading-file-formats.png"),
+  "Intro to Machine Control": require("../../assets/categories/intro-machine-control.png"),
+  "Earthworks Infield Design": require("../../assets/categories/earthworks-infield-design.png"),
+  "Earthworks Core Features": require("../../assets/categories/earthworks-core-features.png"),
+  "Earthworks Project Setup": require("../../assets/categories/earthworks-project-setup.png"),
+  "Earthworks First-Time Setup": require("../../assets/categories/earthworks-first-time-setup.png"),
+  "Earthworks Basics": require("../../assets/categories/earthworks-basics.png"),
+  "Siteworks Advanced Layout": require("../../assets/categories/siteworks-advanced-layout.png"),
+  "Siteworks Basic Layout": require("../../assets/categories/siteworks-basic-layout.png"),
+  "Siteworks Project Setup": require("../../assets/categories/siteworks-project-setup.png"),
+  "Siteworks Basics": require("../../assets/categories/siteworks-basics.png"),
+  "Siteworks First-Time Setup": require("../../assets/categories/siteworks-first-time-setup.png"),
 };
 
 export const HomeScreen = () => {
@@ -44,30 +44,49 @@ export const HomeScreen = () => {
     });
   };
 
-  // Group categories into sections
+  // Group categories into sections based on category names
   const categoryGroups = useMemo(() => {
     if (!categories) return [];
 
+    const generalCategories = categories.filter(
+      (c) =>
+        c.name.toLowerCase().includes("popular") ||
+        c.name.toLowerCase().includes("uploading") ||
+        c.name.toLowerCase().includes("intro") ||
+        c.name.toLowerCase().includes("file format"),
+    );
+
+    const earthworksCategories = categories.filter((c) => c.name.toLowerCase().includes("earthworks"));
+
+    const siteworksCategories = categories.filter((c) => c.name.toLowerCase().includes("siteworks"));
+
+    // Filter out categories that have been placed in sections
+    const categorizedIds = new Set([
+      ...generalCategories.map((c) => c.id),
+      ...earthworksCategories.map((c) => c.id),
+      ...siteworksCategories.map((c) => c.id),
+    ]);
+
+    const otherCategories = categories.filter((c) => !categorizedIds.has(c.id));
+
     return [
-      {
+      generalCategories.length > 0 && {
         title: "General",
-        data: categories.filter(
-          (c) => c.id <= 3, // Popular, Uploading, Intro to Machine Control
-        ),
+        data: generalCategories,
       },
-      {
+      earthworksCategories.length > 0 && {
         title: "Earthworks",
-        data: categories.filter(
-          (c) => c.id >= 4 && c.id <= 8, // All Earthworks categories
-        ),
+        data: earthworksCategories,
       },
-      {
+      siteworksCategories.length > 0 && {
         title: "Siteworks",
-        data: categories.filter(
-          (c) => c.id >= 9 && c.id <= 13, // All Siteworks categories
-        ),
+        data: siteworksCategories,
       },
-    ];
+      otherCategories.length > 0 && {
+        title: "Other",
+        data: otherCategories,
+      },
+    ].filter(Boolean);
   }, [categories]);
 
   if (isLoading) {
@@ -88,9 +107,9 @@ export const HomeScreen = () => {
       ]}
     >
       <Image
-        source={categoryImages[category.id] || require("../../assets/thumbnailFallback.png")}
+        source={categoryImages[category.name] || require("../../assets/thumbnailFallback.png")}
         style={styles.categoryImage}
-        resizeMode="cover"
+        resizeMode="stretch"
       />
     </Pressable>
   );
@@ -149,7 +168,7 @@ const styles = StyleSheet.create({
     height: Platform.select({ web: 140, default: 120 }),
     marginRight: spacing.md,
     overflow: "hidden",
-    width: Platform.select({ web: 200, default: 160 }),
+    width: Platform.select({ web: 280, default: 220 }),
     ...Platform.select({
       web: {
         cursor: "pointer",

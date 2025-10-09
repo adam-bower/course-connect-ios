@@ -1,6 +1,5 @@
 import { StyleSheet, View } from "react-native";
 import { spacing } from "../theme";
-import { Logo } from "./Svg";
 import { useTheme } from "@react-navigation/native";
 import { BuildInfo } from "./BuildInfo";
 import { Typography } from "./Typography";
@@ -26,7 +25,11 @@ export const InfoFooter = ({ showBuildInfo }: InfoFooterProps) => {
           style={{ width: 292, height: 73 }}
         />
       ) : (
-        <Logo textColor={colors.theme950} width={73} height={32} />
+        <Image
+          resizeMode="contain"
+          source={require("../assets/custom-logo.png")}
+          style={{ width: 150, height: 150 }}
+        />
       )}
       {showBuildInfo && (
         <View style={styles.buildInfoContainer}>

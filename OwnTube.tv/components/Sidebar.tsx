@@ -10,7 +10,7 @@ import { Platform, StyleSheet, View } from "react-native";
 import { Button, Separator } from "./shared";
 import { spacing } from "../theme";
 import { Spacer } from "./shared/Spacer";
-import { useBreakpoints, useShareButton } from "../hooks";
+import { useBreakpoints } from "../hooks";
 import { InstanceInfo } from "./InstanceInfo";
 import { Settings, SignOutModal } from "./VideoControlsOverlay/components/modals";
 import { useNetInfo } from "@react-native-community/netinfo";
@@ -18,7 +18,6 @@ import { writeToAsyncStorage } from "../utils";
 import useLeaveInstancePermission from "../hooks/useLeaveInstancePermission";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QrCodeLinkModal } from "./QRCodeLinkModal";
-import build_info from "../build-info.json";
 import { useAuthSessionStore } from "../store";
 import { SearchPopup } from "./SearchPopup";
 
@@ -41,26 +40,14 @@ const SIDEBAR_ROUTES = [
     isAvailableOffline: true,
   },
   {
-    nameKey: "channels",
-    icon: "Channel",
-    href: { pathname: `/${ROUTES.CHANNELS}` },
-    routeName: `(home)/${ROUTES.CHANNELS}`,
-  },
-  {
     nameKey: "playlistsPageTitle",
     icon: "Playlist",
     href: { pathname: `/${ROUTES.PLAYLISTS}` },
     routeName: `(home)/${ROUTES.PLAYLISTS}`,
   },
   {
-    nameKey: "categories",
-    icon: "Category",
-    href: { pathname: `/${ROUTES.CATEGORIES}` },
-    routeName: `(home)/${ROUTES.CATEGORIES}`,
-  },
-  {
     nameKey: "forum",
-    icon: "MessageSquare",
+    icon: "Menu",
     href: { pathname: `/${ROUTES.FORUM}` },
     routeName: `(home)/${ROUTES.FORUM}`,
   },
@@ -82,7 +69,6 @@ export const Sidebar: FC<SidebarProps> = ({ backend, ...navigationProps }) => {
   const { isLeaveInstanceAllowed } = useLeaveInstancePermission(navigationProps);
   const { primaryBackend, currentInstanceConfig } = useAppConfigContext();
   const safeArea = useSafeAreaInsets();
-  const { handleToggleShareModal } = useShareButton();
   const { session } = useAuthSessionStore();
 
   const isLeaveInstanceShown =
@@ -105,8 +91,6 @@ export const Sidebar: FC<SidebarProps> = ({ backend, ...navigationProps }) => {
   };
 
   const paddingHelperStyle = { ...styles.paddingHHelper, width: shouldExpand ? undefined : 48 };
-
-  const homeShareLink = `${build_info.WEB_URL?.toLowerCase()}/${ROUTES.HOME}?backend=${backend}`;
 
   return (
     <DrawerContentScrollView
@@ -136,17 +120,39 @@ export const Sidebar: FC<SidebarProps> = ({ backend, ...navigationProps }) => {
       ) : (
         <InstanceInfo backend={backend} showText={false} />
       )}
+      {currentInstanceConfig?.customizations?.loginWithUsernameAndPassword && (
+        <View style={styles.routesContainer}>
+          {session ? (
+            <Button
+              justifyContent="flex-start"
+              icon={"Exit"}
+              text={shouldExpand ? t("signOut") : undefined}
+              style={paddingHelperStyle}
+              onPress={handleSignOut}
+            />
+          ) : (
+            <Link href={{ pathname: ROUTES.SIGNIN, params: { backend } }} asChild>
+              <Button
+                isActive={
+                  navigationProps.state.index ===
+                  navigationProps.state.routes.findIndex(({ name }) => name === `(home)/${ROUTES.SIGNIN}`)
+                }
+                justifyContent="flex-start"
+                icon={"Sign-in"}
+                text={shouldExpand ? t("signIn") : undefined}
+                style={paddingHelperStyle}
+              />
+            </Link>
+          )}
+        </View>
+      )}
       <View style={styles.routesContainer}>
         {SIDEBAR_ROUTES.filter(({ nameKey }) => {
           switch (nameKey) {
             case "history":
               return !currentInstanceConfig?.customizations?.menuHideHistoryButton;
-            case "channels":
-              return !currentInstanceConfig?.customizations?.menuHideChannelsButton;
             case "playlistsPageTitle":
               return !currentInstanceConfig?.customizations?.menuHidePlaylistsButton;
-            case "categories":
-              return !currentInstanceConfig?.customizations?.menuHideCategoriesButton;
             default:
               return true;
           }
@@ -225,44 +231,6 @@ export const Sidebar: FC<SidebarProps> = ({ backend, ...navigationProps }) => {
         </>
       )}
       <View style={styles.routesContainer}>
-        {currentInstanceConfig?.customizations?.loginWithUsernameAndPassword && (
-          <>
-            {session ? (
-              <Button
-                justifyContent="flex-start"
-                icon={"Exit"}
-                text={shouldExpand ? t("signOut") : undefined}
-                style={paddingHelperStyle}
-                onPress={handleSignOut}
-              />
-            ) : (
-              <Link href={{ pathname: ROUTES.SIGNIN, params: { backend } }} asChild>
-                <Button
-                  isActive={
-                    navigationProps.state.index ===
-                    navigationProps.state.routes.findIndex(({ name }) => name === `(home)/${ROUTES.SIGNIN}`)
-                  }
-                  justifyContent="flex-start"
-                  icon={"Sign-in"}
-                  text={shouldExpand ? t("signIn") : undefined}
-                  style={paddingHelperStyle}
-                />
-              </Link>
-            )}
-          </>
-        )}
-        <Button
-          justifyContent="flex-start"
-          onPress={() =>
-            handleToggleShareModal({
-              staticHeaderKey: "shareVideoSite",
-              staticLink: homeShareLink,
-            })
-          }
-          icon={"Share"}
-          text={shouldExpand ? t("shareAppURL") : undefined}
-          style={paddingHelperStyle}
-        />
         <Button
           justifyContent="flex-start"
           onPress={toggleScheme}

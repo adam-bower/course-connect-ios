@@ -119,7 +119,7 @@ export class PeertubeVideosApi extends AxiosInstanceBasedApi {
           name: video.name,
           category: video.category,
           description: video.description,
-          previewPath: `https://${baseURL}${video.previewPath}`,
+          previewPath: video.previewPath,
           duration: video.duration,
           channel: video.channel,
           publishedAt: video.publishedAt,
@@ -167,6 +167,29 @@ export class PeertubeVideosApi extends AxiosInstanceBasedApi {
       });
     } catch (error: unknown) {
       handleAxiosErrorWithRetry(error, "post video view");
+    }
+  }
+
+  /**
+   * Request video file token for accessing private videos
+   *
+   * @param [baseURL] - Selected instance url
+   * @param [id] - Video uuid
+   * @returns Video file token object with files and streamingPlaylists tokens
+   */
+  async requestVideoToken(baseURL: string, id: string) {
+    try {
+      const response = await this.instance.post<{ files: { token: string }; streamingPlaylists: { token: string } }>(
+        `videos/${id}/token`,
+        {},
+        {
+          baseURL: `https://${baseURL}/api/v1`,
+        },
+      );
+
+      return response.data;
+    } catch (error: unknown) {
+      return handleAxiosErrorWithRetry(error, "video token");
     }
   }
 

@@ -3,6 +3,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { RootStackParams } from "../../app/_layout";
 import { ROUTES } from "../../types";
 import {
+  ApiServiceImpl,
   QUERY_KEYS,
   useGetSubscriptionByChannelQuery,
   useGetVideoCaptionsCollectionQuery,
@@ -87,10 +88,49 @@ export const VideoScreen = () => {
     return Math.floor(Math.random() * premiumAdsData.length);
   }, [premiumAdsData.length]);
 
+  const [videoToken, setVideoToken] = useState<string | null>(null);
+
+  // Fetch video token for private videos
+  useEffect(() => {
+    if (!params?.id || !params?.backend || !data) return;
+
+    // Check if video URL contains 'private' which indicates it needs a token
+    const needsToken =
+      data.streamingPlaylists?.[0]?.playlistUrl?.includes("/private/") ||
+      data.files?.[0]?.fileUrl?.includes("/private/");
+
+    console.log("[Video Token Check]", {
+      videoId: params.id,
+      needsToken,
+      hasStreamingPlaylists: !!data.streamingPlaylists?.length,
+      playlistUrl: data.streamingPlaylists?.[0]?.playlistUrl,
+    });
+
+    if (needsToken) {
+      ApiServiceImpl.requestVideoToken(params.backend, params.id)
+        .then((tokenData) => {
+          console.log("[Video Token Response]", { tokenData });
+          if (tokenData) {
+            // Use streamingPlaylists token for HLS, files token for direct files
+            const token = data.streamingPlaylists?.length
+              ? tokenData.streamingPlaylists?.token
+              : tokenData.files?.token;
+            setVideoToken(token);
+            console.log("[Video Token]", { hasToken: !!token, token });
+          }
+        })
+        .catch((error) => {
+          console.error("[Video Token Error]", error);
+        });
+    }
+  }, [params?.id, params?.backend, data]);
+
   const uri = useMemo(() => {
     if (!params?.id || !data) {
       return;
     }
+
+    let videoUrl;
 
     if (data.streamingPlaylists?.length) {
       let hlsStream: VideoStreamingPlaylist;
@@ -103,15 +143,43 @@ export const VideoScreen = () => {
         hlsStream = data.streamingPlaylists[0];
       }
 
-      return hlsStream.playlistUrl;
+      videoUrl = hlsStream.playlistUrl;
+
+      // Add videoFileToken and reinjectVideoFileToken for private HLS streams
+      if (videoToken && videoUrl?.includes("/private/")) {
+        const separator = videoUrl.includes("?") ? "&" : "?";
+        videoUrl = `${videoUrl}${separator}videoFileToken=${videoToken}&reinjectVideoFileToken=true`;
+      }
+    } else {
+      const webVideoFileByQuality = data.files?.find(({ resolution }) => String(resolution.id) === quality);
+
+      if (!webVideoFileByQuality) {
+        videoUrl = data.files?.filter(({ resolution }) => resolution.id <= 1080)[0]?.fileUrl;
+      } else {
+        videoUrl = webVideoFileByQuality?.fileUrl;
+      }
+
+      // Add videoFileToken for private direct files
+      if (videoToken && videoUrl?.includes("/private/")) {
+        const separator = videoUrl.includes("?") ? "&" : "?";
+        videoUrl = `${videoUrl}${separator}videoFileToken=${videoToken}`;
+      }
     }
 
-    const webVideoFileByQuality = data.files?.find(({ resolution }) => String(resolution.id) === quality);
+    // Debug logging
+    console.log("[Video URL Debug]", {
+      videoName: data.name,
+      backend: params?.backend,
+      hasStreamingPlaylists: !!data.streamingPlaylists?.length,
+      hasFiles: !!data.files?.length,
+      videoUrl,
+      hasToken: !!videoToken,
+      filesCount: data.files?.length,
+      firstFileUrl: data.files?.[0]?.fileUrl,
+    });
 
-    if (!webVideoFileByQuality) return data.files?.filter(({ resolution }) => resolution.id <= 1080)[0]?.fileUrl;
-
-    return webVideoFileByQuality?.fileUrl;
-  }, [params, data, quality, premiumAdsData, isPremiumVideoUnavailable]);
+    return videoUrl;
+  }, [params, data, quality, premiumAdsData, isPremiumVideoUnavailable, videoToken]);
 
   const handleSetTimeStamp = (timestamp: number) => {
     if (!params?.id || isPremiumVideoUnavailable) {

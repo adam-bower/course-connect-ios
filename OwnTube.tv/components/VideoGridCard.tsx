@@ -7,11 +7,9 @@ import { Typography } from "./Typography";
 import { spacing } from "../theme";
 import { useBreakpoints, useHoverState, useViewHistory } from "../hooks";
 import { useTheme } from "@react-navigation/native";
-import { ChannelLink } from "./ChannelLink";
 import { forwardRef, useMemo, useState } from "react";
 import TVFocusGuideHelper from "./helpers/TVFocusGuideHelper";
 import { FocusGuide } from "./helpers";
-import { VideoItemFooter } from "./VideoItemFooter";
 
 interface VideoGridCardProps {
   video: GetVideosVideo;
@@ -83,17 +81,6 @@ export const VideoGridCard = forwardRef<View, VideoGridCardProps>(({ video, back
           </Link>
         </TVFocusGuideHelper>
       </Pressable>
-      <TVFocusGuideHelper focusable={false} style={styles.restInfoContainer}>
-        <ChannelLink
-          href={{
-            pathname: `/${ROUTES.CHANNEL}`,
-            params: { channel: video.channel?.name, backend: video.channel?.host },
-          }}
-          text={video.channel?.displayName}
-          sourceLink={video.channel?.url}
-        />
-        <VideoItemFooter video={video} />
-      </TVFocusGuideHelper>
     </View>
   );
 });
@@ -114,6 +101,5 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   pressableContainer: { gap: spacing.md },
-  restInfoContainer: { gap: spacing.xs, paddingHorizontal: spacing.sm },
   textContainer: { gap: spacing.sm, paddingHorizontal: spacing.sm },
 });

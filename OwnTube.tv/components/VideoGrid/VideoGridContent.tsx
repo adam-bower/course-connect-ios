@@ -145,6 +145,7 @@ export const VideoGridContent = forwardRef<VideoGridContentHandle, VideoGridCont
           })
         ) : (
           <FlatList
+            scrollEnabled={false}
             showsHorizontalScrollIndicator={false}
             removeClippedSubviews={false}
             disableVirtualization

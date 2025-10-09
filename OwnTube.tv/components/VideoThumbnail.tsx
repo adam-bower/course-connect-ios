@@ -1,8 +1,8 @@
 import { View, Image, StyleSheet } from "react-native";
 import { useTheme } from "@react-navigation/native";
-import { FC, useState } from "react";
+import { FC, useState, useEffect } from "react";
 import { ViewHistoryEntry } from "../hooks";
-import { GetVideosVideo } from "../api/models";
+import { GetVideosVideo, ApiServiceImpl } from "../api";
 import { borderRadius, spacing } from "../theme";
 import { Typography } from "./Typography";
 import { getHumanReadableDuration } from "../utils";
@@ -21,12 +21,48 @@ const fallback = require("../assets/thumbnailFallback.png");
 export const VideoThumbnail: FC<VideoThumbnailProps> = ({ video, backend, timestamp, imageDimensions }) => {
   const { colors } = useTheme();
   const [isError, setIsError] = useState(false);
+  const [imageToken, setImageToken] = useState<string | null>(null);
   const { t } = useTranslation();
   const isVideoCurrentlyLive = video.state?.id === 1 && video.isLive;
 
   const percentageWatched = timestamp ? (timestamp / video.duration) * 100 : 0;
 
-  const imageSource = video.previewPath ? { uri: video.previewPath } : fallback;
+  // Fetch token for private thumbnails
+  useEffect(() => {
+    if (!backend || !video.uuid || !video.previewPath) return;
+
+    // Check if thumbnail is private
+    if (video.previewPath.includes("/lazy-static/") && backend) {
+      // Private thumbnails might need authentication, try to fetch token
+      ApiServiceImpl.requestVideoToken(backend, video.uuid)
+        .then((tokenData) => {
+          if (tokenData?.files?.token) {
+            setImageToken(tokenData.files.token);
+          }
+        })
+        .catch(() => {
+          // If token fetch fails, image will try to load without token
+        });
+    }
+  }, [backend, video.uuid, video.previewPath]);
+
+  const imageUrl = video.previewPath ? `https://${backend}${video.previewPath}` : null;
+  const imageUrlWithToken =
+    imageUrl && imageToken ? `${imageUrl}${imageUrl.includes("?") ? "&" : "?"}videoFileToken=${imageToken}` : imageUrl;
+
+  const imageSource = imageUrlWithToken ? { uri: imageUrlWithToken } : fallback;
+
+  // Debug logging
+  if (video.previewPath) {
+    console.log("[Thumbnail Debug]", {
+      videoName: video.name,
+      backend,
+      previewPath: video.previewPath,
+      fullURL: imageUrlWithToken,
+      hasToken: !!imageToken,
+      dimensions: imageDimensions,
+    });
+  }
 
   if (!backend || !imageDimensions.width || !imageDimensions.height) {
     return null;

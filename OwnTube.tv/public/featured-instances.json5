@@ -260,4 +260,12 @@
     hostname: "swebbtube.se",
     logoUrl: "https://owntube-tv.github.io/web-client/logos/swebbtube.se.png",
   },
+  {
+    name: "Course Connect",
+    description: "AB Civil training videos and courses",
+    hostname: "course-connect.ab-civil.com",
+    customizations: {
+      loginWithUsernameAndPassword: true,
+    },
+  },
 ]
